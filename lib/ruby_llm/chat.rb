@@ -197,7 +197,10 @@ module RubyLLM
         message = add_message role: :tool, content:, tool_call_id: tool_call.id
         @on[:end_message]&.call(message)
 
-        halt_result = result if result.is_a?(Tool::Halt)
+        if result.is_a?(Tool::Halt)
+          # Enrich halt with usage metadata from the triggering response
+          halt_result = result.with_metadata_from(response)
+        end
       end
 
       halt_result || complete(&)

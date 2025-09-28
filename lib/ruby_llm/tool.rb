@@ -17,14 +17,42 @@ module RubyLLM
   class Tool
     # Stops conversation continuation after tool execution
     class Halt
-      attr_reader :content
+      attr_reader :content, :input_tokens, :output_tokens, :model_id, :raw
 
-      def initialize(content)
+      def initialize(content, input_tokens: nil, output_tokens: nil, model_id: nil, raw: nil)
         @content = content
+        @input_tokens = input_tokens
+        @output_tokens = output_tokens
+        @model_id = model_id
+        @raw = raw
+      end
+
+      def self.from_message(content, message)
+        new(
+          content,
+          input_tokens: message.respond_to?(:input_tokens) ? message.input_tokens : nil,
+          output_tokens: message.respond_to?(:output_tokens) ? message.output_tokens : nil,
+          model_id: message.respond_to?(:model_id) ? message.model_id : nil,
+          raw: message.respond_to?(:raw) ? message.raw : nil
+        )
+      end
+
+      def with_metadata_from(message)
+        self.class.from_message(@content, message)
       end
 
       def to_s
         @content.to_s
+      end
+
+      def to_h
+        {
+          content: content,
+          input_tokens: input_tokens,
+          output_tokens: output_tokens,
+          model_id: model_id,
+          raw: raw
+        }.compact
       end
     end
 
@@ -76,8 +104,8 @@ module RubyLLM
 
     protected
 
-    def halt(message)
-      Halt.new(message)
+    def halt(message, **metadata)
+      Halt.new(message, **metadata)
     end
   end
 end
